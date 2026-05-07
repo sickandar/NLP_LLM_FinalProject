@@ -48,7 +48,7 @@ read_md_or_default <- function(file, default_text) {
 
 #reviews <- read.csv("fakereviewsdataset_sample_with_dates.csv")
 
-reviews <- read.csv("fake reviews dataset.csv")
+reviews <- read.csv("fakereviewsdataset.csv")
 
 reviews <- reviews[reviews$label == "OR", ]
 
