@@ -109,8 +109,7 @@ reviews$category <- gsub("_", " ", reviews$category)
 data_for_app <- reviews |>
   mutate(
     primary_id = as.character(primary_id),
-    review_date =   mutate(date = as.Date(review_date),
-         date = format(review_date, "%Y-%m-%d"))
+    review_date = format(as.Date(review_date), "%Y-%m-%d"),
     category = as.factor(category),
     rating = as.numeric(rating),
     text = as.character(text)
