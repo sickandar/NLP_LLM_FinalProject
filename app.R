@@ -47,63 +47,63 @@ read_md_or_default <- function(file, default_text) {
 #### - Data Import and Setup ####
 # -------------------------------------------------------------------
 
-reviews <- read.csv("fakereviewsdataset_sample_with_dates.csv")
+#reviews <- read.csv("fakereviewsdataset_sample_with_dates.csv")
 
-#reviews <- read.csv("fakereviewsdataset.csv")
+reviews <- read.csv("fakereviewsdataset.csv")
 
-#reviews <- reviews[reviews$label == "OR", ]
+reviews <- reviews[reviews$label == "OR", ]
 
 reviews$category <- gsub("_5$", "", reviews$category)
 reviews$category <- gsub("_", " ", reviews$category)
 
-#reviews <- reviews |>
-#  rename(text = text_)
-#reviews <- reviews |>
-#  mutate(primary_id = paste0("A_", row_number()))
-#reviews <- reviews |>
-#  mutate(
-#    primary_id = paste0(
-#      "A_",
-#      stringr::str_pad(row_number(),
-#                       width = nchar(n()),
-#                       pad = "0")
-#    )
-#  )
+reviews <- reviews |>
+  rename(text = text_)
+reviews <- reviews |>
+  mutate(primary_id = paste0("A_", row_number()))
+reviews <- reviews |>
+  mutate(
+    primary_id = paste0(
+      "A_",
+      stringr::str_pad(row_number(),
+                       width = nchar(n()),
+                       pad = "0")
+    )
+  )
 
-#reviews <- reviews |>
-#  relocate(primary_id, .before = 1)
+reviews <- reviews |>
+  relocate(primary_id, .before = 1)
 
 
-#start_date <- as.Date("2026-01-01")
-#end_date   <- as.Date("2026-05-12")
+start_date <- as.Date("2026-01-01")
+end_date   <- as.Date("2026-05-12")
 
-#set.seed(6395)
+set.seed(6395)
 
-#make_uneven_dates <- function(n) {
-#  all_dates <- seq.Date(start_date, end_date, by = "day")
+make_uneven_dates <- function(n) {
+  all_dates <- seq.Date(start_date, end_date, by = "day")
 
-  # Uneven probability by month
-#  date_weights <- case_when(
-#    month(all_dates) == 1 ~ 0.90,
-#    month(all_dates) == 2 ~ 1.15,
-#    month(all_dates) == 3 ~ 0.95,
-#    month(all_dates) == 4 ~ 1.10,
-#    month(all_dates) == 5 ~ 0.85,
-#    TRUE ~ 0.01
-#  )
+   Uneven probability by month
+  date_weights <- case_when(
+    month(all_dates) == 1 ~ 0.90,
+    month(all_dates) == 2 ~ 1.15,
+    month(all_dates) == 3 ~ 0.95,
+    month(all_dates) == 4 ~ 1.10,
+    month(all_dates) == 5 ~ 0.85,
+    TRUE ~ 0.01
+  )
 
-  # Add day-to-day randomness so it does not look smooth
-#  date_weights <- date_weights * runif(length(all_dates), 0.2, 2.5)
+   Add day-to-day randomness so it does not look smooth
+  date_weights <- date_weights * runif(length(all_dates), 0.2, 2.5)
 
-#  sample(all_dates, size = n, replace = TRUE, prob = date_weights)
-#}
+  sample(all_dates, size = n, replace = TRUE, prob = date_weights)
+}
 
-#reviews <- reviews |>
-#  group_by(category) |>
-#  mutate(
-#    review_date = make_uneven_dates(n())
-#  ) |>
-#  ungroup()
+reviews <- reviews |>
+  group_by(category) |>
+  mutate(
+    review_date = make_uneven_dates(n())
+  ) |>
+  ungroup()
 
 
 
