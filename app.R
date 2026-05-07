@@ -82,7 +82,7 @@ set.seed(6395)
 make_uneven_dates <- function(n) {
   all_dates <- seq.Date(start_date, end_date, by = "day")
 
-   Uneven probability by month
+#   Uneven probability by month
   date_weights <- case_when(
     month(all_dates) == 1 ~ 0.90,
     month(all_dates) == 2 ~ 1.15,
@@ -92,7 +92,7 @@ make_uneven_dates <- function(n) {
     TRUE ~ 0.01
   )
 
-   Add day-to-day randomness so it does not look smooth
+#   Add day-to-day randomness so it does not look smooth
   date_weights <- date_weights * runif(length(all_dates), 0.2, 2.5)
 
   sample(all_dates, size = n, replace = TRUE, prob = date_weights)
