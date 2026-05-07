@@ -23,6 +23,7 @@ library(textstem)
 library(topicmodels)
 library(tm)
 library(broom)
+library(magick)
 #For PDF Creation
 library(rmarkdown)
 library(knitr)
