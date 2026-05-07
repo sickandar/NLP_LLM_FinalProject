@@ -1318,13 +1318,18 @@ server <- function(input, output, session) {
     comma(nrow(df))
   })
   
-  output$past_month_reviews <- renderText({
-    df <- filtered_reviews()
-    req(nrow(df) > 0)
-    max_date <- max(data_for_app$review_date, na.rm = TRUE)
-    month_start <- max_date - 30
-    comma(sum(df$review_date >= month_start, na.rm = TRUE))
-  })
+output$past_month_reviews <- renderText({
+  df <- filtered_reviews()
+  req(nrow(df) > 0)
+
+  df <- df |>
+    mutate(review_date = as.Date(review_date))
+
+  max_date <- max(as.Date(data_for_app$review_date), na.rm = TRUE)
+  month_start <- max_date - 30
+
+  scales::comma(sum(df$review_date >= month_start, na.rm = TRUE))
+})
   
   output$filters_applied <- renderUI({
     tags$div(
