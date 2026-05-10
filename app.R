@@ -24,6 +24,8 @@ library(broom)
 library(magick)
 # Just so I can try to publish..
 library(RSQLite)
+# To fix LDA error when published online
+library(reshape2)
 #For PDF Creation
 library(rmarkdown)
 library(knitr)
