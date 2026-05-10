@@ -83,8 +83,8 @@ set.seed(6395)
 
 make_uneven_dates <- function(n) {
   all_dates <- seq.Date(start_date, end_date, by = "day")
-
-#   Uneven probability by month
+  
+  #   Uneven probability by month
   date_weights <- case_when(
     month(all_dates) == 1 ~ 0.90,
     month(all_dates) == 2 ~ 1.15,
@@ -93,10 +93,10 @@ make_uneven_dates <- function(n) {
     month(all_dates) == 5 ~ 0.85,
     TRUE ~ 0.01
   )
-
-#   Add day-to-day randomness so it does not look smooth
+  
+  #   Add day-to-day randomness so it does not look smooth
   date_weights <- date_weights * runif(length(all_dates), 0.2, 2.5)
-
+  
   sample(all_dates, size = n, replace = TRUE, prob = date_weights)
 }
 
@@ -124,7 +124,12 @@ dataset_today <- max(as.Date(data_for_app$review_date), na.rm = TRUE)
 
 date_filter_instructions <- paste0(
   "Important date-filtering instructions:\n",
-  "- The review_date column is formatted as YYYY-MM-DD.\n",
+  "- The review_date column is stored as character text in YYYY-MM-DD format.\n",
+  "- Never use YEAR(review_date), MONTH(review_date), or DAY(review_date) directly.\n",
+  "- If extracting date parts, always cast first: YEAR(CAST(review_date AS DATE)), MONTH(CAST(review_date AS DATE)), DAY(CAST(review_date AS DATE)).\n",
+  "- Prefer simple string/date range filters when possible because review_date is formatted as YYYY-MM-DD.\n",
+  "- For a full year like 2026, use: review_date >= '2026-01-01' AND review_date <= '2026-12-31'.\n",
+  "- For a month like April 2026, use: review_date >= '2026-04-01' AND review_date <= '2026-04-30'.\n",
   "- When the user says 'today', automatically interpret today as ",
   format(dataset_today, "%Y-%m-%d"), ".\n",
   "- Do not ask the user to clarify today's date.\n",
@@ -277,6 +282,27 @@ ui <- page_navbar(
     .med-value-box .value-box-value { font-size: 0.95rem !important; line-height: 1.05 !important; word-break: break-word; white-space: normal; }
     .med-value-box .value-box-area { padding: 0.45rem !important; }
     .med-value-box { min-height: 90px !important; }
+
+    #advanced_chat h1,
+    #advanced_chat h2,
+    #advanced_chat h3 {
+      font-size: 1rem !important;
+      line-height: 1.2 !important;
+      margin-top: 0.4rem !important;
+      margin-bottom: 0.3rem !important;
+      font-weight: 700 !important;
+    }
+
+    #advanced_chat p {
+      font-size: 0.90rem !important;
+      line-height: 1.25 !important;
+    }
+
+    #advanced_chat li {
+      font-size: 0.90rem !important;
+      line-height: 1.25 !important;
+    }
+
     .table-fill-card { flex: 1 1 45%; min-height: 45%; overflow: visible !important; }
     .table-fill-card .card-body { overflow: visible !important; padding-bottom: 1rem; }
     .table-fill-card .dataTables_wrapper, .table-fill-card table.dataTable { width: 100% !important; }
@@ -308,7 +334,7 @@ ui <- page_navbar(
               "Select chart:",
               choices = c(
                 "1. Count of reviews by rating" = "rating_bar",
-                "2. Count of reviews by review ate" = "reviews_by_date",
+                "2. Count of reviews by review date" = "reviews_by_date",
                 "3. Average rating by week" = "avg_rating_week",
                 "4. Count by category + rating" = "reviews_by_category_rating",
                 "5. Count by category + rating group" = "rating_group_category"
@@ -352,10 +378,10 @@ ui <- page_navbar(
         br(),
         div(
           style = "display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: auto; gap: 0.75rem;",
-          card(card_header("Positive Sentiment Over Time"), plotOutput("positive_sentiment_time", height = "270px")),
-          card(card_header("Negative Sentiment Over Time"), plotOutput("negative_sentiment_time", height = "270px")),
-          card(card_header("Most Common Issue by Category"), plotOutput("common_issue_by_category", height = "270px")),
-          card(card_header("Sentiment Split"), plotOutput("sentiment_pie", height = "270px")),
+          card(card_header("Positive Sentiment Over Time"), plotly::plotlyOutput("positive_sentiment_time", height = "270px")),
+          card(card_header("Negative Sentiment Over Time"), plotly::plotlyOutput("negative_sentiment_time", height = "270px")),
+          card(card_header("Most Common Issue by Category"), plotly::plotlyOutput("common_issue_by_category", height = "270px")),
+          card(card_header("Sentiment Split"), plotly::plotlyOutput("sentiment_pie", height = "270px")),
           card(
             style = "grid-column: 1 / -1;",
             card_header("LDA Topic Modeling"),
@@ -658,6 +684,17 @@ server <- function(input, output, session) {
   # Advanced plots
   # ============================================================
   
+  advanced_chart_theme <- theme_minimal(base_size = 15) +
+    theme(
+      plot.title = element_text(size = 17, face = "bold", hjust = 0.5),
+      plot.subtitle = element_text(size = 13),
+      axis.title = element_text(size = 14),
+      axis.text = element_text(size = 12),
+      legend.title = element_text(size = 13),
+      legend.text = element_text(size = 12),
+      strip.text = element_text(size = 13, face = "bold")
+    )
+  
   positive_plot <- reactive({
     plot_df <- advanced_data()$sentiment_scores |>
       group_by(review_date) |>
@@ -666,11 +703,19 @@ server <- function(input, output, session) {
         .groups = "drop"
       )
     
-    ggplot(plot_df, aes(x = review_date, y = positive_words)) +
+    ggplot(plot_df, aes(
+      x = review_date,
+      y = positive_words,
+      group = 1,
+      text = paste0(
+        "Date: ", review_date,
+        "<br>Positive words: ", scales::comma(positive_words)
+      )
+    )) +
       geom_area(fill = "#2ecc71", alpha = 0.25) +
-      geom_line(color = "#27ae60", linewidth = 1.2) +
-      geom_point(color = "#27ae60", size = 2) +
-      theme_minimal(base_size = 12) +
+      geom_line(color = "#27ae60", linewidth = 0.5) +
+      geom_point(color = "#27ae60", size = 1.1) +
+      advanced_chart_theme +
       labs(
         title = "Positive Sentiment Over Time",
         subtitle = "Based on filtered review data",
@@ -679,7 +724,15 @@ server <- function(input, output, session) {
       )
   })
   
-  output$positive_sentiment_time <- renderPlot(print(positive_plot()))
+  output$positive_sentiment_time <- plotly::renderPlotly({
+    plotly::ggplotly(positive_plot(), tooltip = "text") |>
+      plotly::layout(
+        font = list(size = 13),
+        title = list(font = list(size = 17), x = 0.5),
+        margin = list(l = 65, r = 20, t = 55, b = 50)
+      ) |>
+      plotly::config(displayModeBar = FALSE)
+  })
   
   negative_plot <- reactive({
     plot_df <- advanced_data()$sentiment_scores |>
@@ -689,17 +742,35 @@ server <- function(input, output, session) {
         .groups = "drop"
       )
     
-    ggplot(plot_df, aes(x = review_date, y = negative_words)) +
+    ggplot(plot_df, aes(
+      x = review_date,
+      y = negative_words,
+      group = 1,
+      text = paste0(
+        "Date: ", review_date,
+        "<br>Negative words: ", scales::comma(negative_words)
+      )
+    )) +
       geom_area(fill = "#e74c3c", alpha = 0.25) +
-      geom_line(color = "#c0392b", linewidth = 1.2) +
-      geom_point(color = "#c0392b", size = 2) +
-      theme_minimal(base_size = 12) +
+      geom_line(color = "#c0392b", linewidth = 0.5) +
+      geom_point(color = "#c0392b", size = 1.1) +
+      advanced_chart_theme +
       labs(
         title = "Negative Sentiment Over Time",
         subtitle = "Based on filtered review data",
         x = "Review Date",
         y = "Negative Word Count"
       )
+  })
+  
+  output$negative_sentiment_time <- plotly::renderPlotly({
+    plotly::ggplotly(negative_plot(), tooltip = "text") |>
+      plotly::layout(
+        font = list(size = 13),
+        title = list(font = list(size = 17), x = 0.5),
+        margin = list(l = 65, r = 20, t = 55, b = 50)
+      ) |>
+      plotly::config(displayModeBar = FALSE)
   })
   
   output$download_advanced_pdf <- downloadHandler(
@@ -801,8 +872,6 @@ server <- function(input, output, session) {
     }
   )
   
-  output$negative_sentiment_time <- renderPlot(print(negative_plot()))
-  
   common_issue_plot <- reactive({
     plot_df <- advanced_data()$biggest_issue
     
@@ -811,9 +880,18 @@ server <- function(input, output, session) {
       shiny::need(sum(plot_df$issue_count) > 0, "No issue keyword matches found for the current filter.")
     )
     
-    ggplot(plot_df, aes(x = issue_count, y = reorder(category, issue_count), fill = issue)) +
+    ggplot(plot_df, aes(
+      x = issue_count,
+      y = reorder(category, issue_count),
+      fill = issue,
+      text = paste0(
+        "Category: ", category,
+        "<br>Issue: ", issue,
+        "<br>Matching reviews: ", scales::comma(issue_count)
+      )
+    )) +
       geom_col() +
-      theme_minimal(base_size = 12) +
+      advanced_chart_theme +
       labs(
         title = "Most Common Issue by Category",
         subtitle = "Based on filtered review data",
@@ -823,7 +901,27 @@ server <- function(input, output, session) {
       )
   })
   
-  output$common_issue_by_category <- renderPlot(print(common_issue_plot()))
+  output$common_issue_by_category <- plotly::renderPlotly({
+    plotly::ggplotly(common_issue_plot(), tooltip = "text") |>
+      plotly::layout(
+        font = list(size = 10),
+        title = list(font = list(size = 17), x = 0.5),
+        xaxis = list(
+          title = list(font = list(size = 10)),
+          tickfont = list(size = 9)
+        ),
+        yaxis = list(
+          title = list(font = list(size = 9)),
+          tickfont = list(size = 8)
+        ),
+        legend = list(
+          font = list(size = 8),
+          title = list(font = list(size = 9))
+        ),
+        margin = list(l = 115, r = 15, t = 45, b = 40)
+      ) |>
+      plotly::config(displayModeBar = FALSE)
+  })
   
   sentiment_pie_plot <- reactive({
     plot_df <- advanced_data()$sentiment_scores |>
@@ -837,11 +935,58 @@ server <- function(input, output, session) {
       geom_col(width = 1, color = "white") +
       geom_text(aes(label = label), position = position_stack(vjust = 0.5), size = 4) +
       coord_polar(theta = "y") +
-      theme_void(base_size = 12) +
+      theme_void(base_size = 15) +
       labs(title = "Sentiment Split of Filtered Reviews", fill = "Sentiment")
   })
   
-  output$sentiment_pie <- renderPlot(print(sentiment_pie_plot()))
+  output$sentiment_pie <- plotly::renderPlotly({
+    plot_df <- advanced_data()$sentiment_scores |>
+      count(sentiment_group) |>
+      mutate(
+        percent = n / sum(n),
+        hover_text = paste0(
+          "Sentiment: ", sentiment_group,
+          "<br>Reviews: ", scales::comma(n),
+          "<br>Percent: ", scales::percent(percent, accuracy = 0.1)
+        )
+      )
+    
+    plotly::plot_ly(
+      data = plot_df,
+      labels = ~sentiment_group,
+      values = ~n,
+      type = "pie",
+      textinfo = "label+percent",
+      hoverinfo = "text",
+      text = ~hover_text,
+      textfont = list(size = 11),marker = list(
+        colors = c(
+          "Positive" = "#2ecc71",
+          "Negative" = "#e74c3c",
+          "Neutral"  = "#0072B2"
+        )[plot_df$sentiment_group]
+      ),
+      domain = list(
+        x = c(0.18, 0.88),
+        y = c(0.00, 0.92)
+      )
+    ) |>
+      plotly::layout(
+        title = list(
+          text = "<b>Sentiment Split of Filtered Reviews</b>",
+          font = list(size = 17, color = "black"),
+          x = 0.5
+        ),
+        font = list(size = 10),
+        legend = list(
+          font = list(size = 10),
+          x = 1.02,
+          y = 0.5
+        ),
+        margin = list(l = 10, r = 45, t = 45, b = 10)
+      ) |>
+      plotly::config(displayModeBar = FALSE)
+  })
   
   output$lda_topics_plot <- renderPlot({
     shiny::validate(shiny::need(input$run_lda > 0, "Click 'Run LDA' to generate topics for the currently filtered reviews."))
@@ -1179,7 +1324,8 @@ server <- function(input, output, session) {
       "When the user asks what happened, what caused a spike, why a metric changed, or what is driving a result, analyze actual review text only when that evidence is relevant to the selected chart.",
       "Use only the evidence relevant to the selected chart; do not use unrelated chart summaries.",
       "Use cautious language: say the reviews suggest something, not that they prove an external cause.",
-      "Plain bullets only: normally 3 to 5 bullets, no headings, no bold. Be specific and evidence-based."
+      "Plain bullets only: normally 3 to 5 bullets, no headings, no bold. Be specific and evidence-based.",
+      "Do not use large Markdown headings. Do not start responses with # or ## headings. Use short bold section labels instead."
     )
   )
   
@@ -1406,6 +1552,17 @@ server <- function(input, output, session) {
       plot.margin = margin(2, 2, 2, 2)
     )
   
+  advanced_chart_theme <- theme_minimal(base_size = 10) +
+    theme(
+      plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+      axis.title = element_text(size = 11),
+      axis.text = element_text(size = 11),
+      legend.title = element_text(size = 11),
+      legend.text = element_text(size = 11),
+      strip.text = element_text(size = 11, face = "bold"),
+      plot.margin = margin(5, 5, 5, 5)
+    )
+  
   output$main_chart <- plotly::renderPlotly({
     df <- filtered_reviews()
     req(nrow(df) > 0)
@@ -1439,7 +1596,7 @@ server <- function(input, output, session) {
           y = "Number of Reviews"
         )
     }
-      else if (input$chart_type == "reviews_by_date") {
+    else if (input$chart_type == "reviews_by_date") {
       p <- df |> 
         count(review_date) |>
         ggplot(aes(
