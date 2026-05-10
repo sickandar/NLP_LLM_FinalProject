@@ -22,6 +22,8 @@ library(topicmodels)
 library(tm)
 library(broom)
 library(magick)
+# Just so I can try to publish..
+library(RSQLite)
 #For PDF Creation
 library(rmarkdown)
 library(knitr)
