@@ -4,6 +4,7 @@
 # -------------------------------------------------------------------
 
 library(shiny)
+library(plotly)
 library(bslib)
 library(querychat)
 library(ellmer)
