@@ -1,10 +1,7 @@
-# ============================================================
-# app_embedding_retrieval.R
+# -------------------------------------------------------------------
 # Customer Review Dashboard
 # Uses Claude Haiku 4.5 for all LLM calls and local retrieval for review evidence
-# Replaces "Theme Mentions" with "Most Common Issue by Category"
-# All analyses use the filtered data from QueryChat
-# ============================================================
+# -------------------------------------------------------------------
 
 library(shiny)
 library(bslib)
@@ -106,7 +103,6 @@ reviews <- reviews |>
   ungroup()
 
 
-
 data_for_app <- reviews |>
   mutate(
     primary_id = as.character(primary_id),
@@ -116,6 +112,21 @@ data_for_app <- reviews |>
     text = as.character(text)
   ) |>
   select(primary_id, review_date, category, rating, text)
+
+# ---- Dynamic date context for QueryChat, -----
+# -----so that QueryChat knows what today's date is ----
+dataset_today <- max(as.Date(data_for_app$review_date), na.rm = TRUE)
+
+date_filter_instructions <- paste0(
+  "Important date-filtering instructions:\n",
+  "- The review_date column is formatted as YYYY-MM-DD.\n",
+  "- When the user says 'today', automatically interpret today as ",
+  format(dataset_today, "%Y-%m-%d"), ".\n",
+  "- Do not ask the user to clarify today's date.\n",
+  "- For requests like 'between April 15th and today', filter review_date from ",
+  "2026-04-15 through ", format(dataset_today, "%Y-%m-%d"), ", inclusive.\n",
+  "- For date ranges, use review_date >= start date and review_date <= end date."
+)
 
 qc <- QueryChat$new(
   data_for_app,
@@ -132,9 +143,13 @@ qc <- QueryChat$new(
     "reviews_description.md",
     "This dataset contains customer reviews with primary_id, review_date, category, rating, and text."
   ),
-  extra_instructions = read_md_or_default(
-    "reviews_instructions.md",
-    "Use only the available columns to filter the review dataset."
+  extra_instructions = paste(
+    read_md_or_default(
+      "reviews_instructions.md",
+      "Use only the available columns to filter the review dataset."
+    ),
+    date_filter_instructions,
+    sep = "\n\n"
   )
 )
 
@@ -282,30 +297,29 @@ ui <- page_navbar(
         div(
           style = "flex: 0 0 50%; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;",
           card(
-            card_header("Chart"),
+            card_header("Summary Charts (for filtered data if applicable)"),
             selectInput(
               "chart_type",
               "Select chart:",
               choices = c(
-                "Reviews by Rating" = "rating_bar",
-                "Reviews Submitted by Date" = "reviews_by_date",
-                "Average Rating by Week" = "avg_rating_week",
-                "Reviews by Category + Rating" = "reviews_by_category_rating",
-                "Reviews by Category + Rating Group" = "rating_group_category",
-                "Low-Rating Reviews by Category" = "low_rating_category"
+                "1. Count of reviews by rating" = "rating_bar",
+                "2. Count of reviews by review ate" = "reviews_by_date",
+                "3. Average rating by week" = "avg_rating_week",
+                "4. Count by category + rating" = "reviews_by_category_rating",
+                "5. Count by category + rating group" = "rating_group_category"
               ),
               selected = "rating_bar"
             ),
-            plotOutput("main_chart", height = "230px")
+            plotly::plotlyOutput("main_chart", height = "230px")
           ),
           div(
             style = "display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 0.75rem; min-height: 0;",
-            value_box("Average Rating", textOutput("avg_rating"), class = "med-value-box"),
-            value_box("Number of Responses", textOutput("num_responses"), class = "med-value-box"),
-            value_box("Past Month Reviews", textOutput("past_month_reviews"), class = "med-value-box"),
-            value_box("Filters Applied", uiOutput("filters_applied"), class = "med-value-box"),
-            value_box("Top Category", uiOutput("top_category"), class = "med-value-box"),
-            value_box("", uiOutput("empty_box"), class = "med-value-box")
+            value_box("Average Rating of Filtered Reviews", textOutput("avg_rating"), class = "med-value-box"),
+            value_box("Filtered Count of Reviews", textOutput("num_responses"), class = "med-value-box"),
+            value_box("Current Month Review Count (from filtered criteria)", textOutput("past_month_reviews"), class = "med-value-box"),
+            value_box("Current Filters Applied", uiOutput("filters_applied"), class = "med-value-box"),
+            value_box("Top Category (by Review count)", uiOutput("top_category"), class = "med-value-box"),
+            value_box("All Available Unfiltered Categories", uiOutput("available_categories"), class = "med-value-box")
           )
         ),
         card(
@@ -393,6 +407,20 @@ server <- function(input, output, session) {
   
   filtered_reviews <- reactive({
     qc_vals$df()
+  })
+  
+  output$available_categories <- renderUI({
+    cats <- data_for_app |>
+      distinct(category) |>
+      arrange(category) |>
+      pull(category)
+    
+    tags$div(
+      style = "font-size: 0.70rem; line-height: 1.1; max-height: 75px; overflow-y: auto;",
+      lapply(cats, function(cat) {
+        tags$div(as.character(cat))
+      })
+    )
   })
   
   # ---- Helper: save ggplot as PNG for chatbot vision ----
@@ -1319,18 +1347,20 @@ server <- function(input, output, session) {
     comma(nrow(df))
   })
   
-output$past_month_reviews <- renderText({
-  df <- filtered_reviews()
-  req(nrow(df) > 0)
-
-  df <- df |>
-    mutate(review_date = as.Date(review_date))
-
-  max_date <- max(as.Date(data_for_app$review_date), na.rm = TRUE)
-  month_start <- max_date - 30
-
-  scales::comma(sum(df$review_date >= month_start, na.rm = TRUE))
-})
+  output$past_month_reviews <- renderText({
+    all_df <- data_for_app |>
+      mutate(review_date = as.Date(review_date))
+    
+    max_date <- max(all_df$review_date, na.rm = TRUE)
+    
+    month_start <- lubridate::floor_date(max_date, unit = "month")
+    
+    scales::comma(sum(
+      all_df$review_date >= month_start &
+        all_df$review_date <= max_date,
+      na.rm = TRUE
+    ))
+  })
   
   output$filters_applied <- renderUI({
     tags$div(
@@ -1359,72 +1389,247 @@ output$past_month_reviews <- renderText({
   # Main chart
   # ============================================================
   
-  output$main_chart <- renderPlot({
+  # ---- Larger chart text theme ----
+  big_chart_theme <- theme_minimal(base_size = 10) +
+    theme(
+      plot.title = element_text(size = 12, face = "bold", hjust = 0.7),
+      plot.subtitle = element_text(size = 11),
+      axis.title = element_text(size = 11),
+      axis.text = element_text(size = 11),
+      legend.title = element_text(size = 11),
+      legend.text = element_text(size = 11),
+      plot.margin = margin(2, 2, 2, 2)
+    )
+  
+  output$main_chart <- plotly::renderPlotly({
     df <- filtered_reviews()
     req(nrow(df) > 0)
     
+    df <- df |>
+      mutate(
+        review_date = as.Date(review_date),
+        rating = as.numeric(rating)
+      )
+    
     if (input$chart_type == "rating_bar") {
-      df |> count(rating) |>
-        ggplot(aes(factor(rating), n)) +
-        geom_col() +
-        theme_minimal(base_size = 12) +
-        labs(title = "Review Count by Rating", subtitle = paste(comma(nrow(df)), "filtered reviews"), x = "Rating", y = "Number of Reviews")
+      rating_df <- df |> 
+        count(rating) |>
+        mutate(percent = n / sum(n))
       
-    } else if (input$chart_type == "reviews_by_date") {
-      df |> count(review_date) |>
-        ggplot(aes(review_date, n)) +
-        geom_line(linewidth = 1) +
-        geom_point(size = 1.5) +
-        theme_minimal(base_size = 12) +
-        labs(title = "Number of Reviews Submitted by Date", subtitle = paste(comma(nrow(df)), "filtered reviews"), x = "Review Date", y = "Number of Reviews")
+      p <- rating_df |>
+        ggplot(aes(
+          x = factor(rating),
+          y = n,
+          text = paste0(
+            "Rating: ", rating,
+            "<br>Reviews: ", scales::comma(n),
+            "<br>Percent: ", scales::percent(percent, accuracy = 0.1)
+          )
+        )) +
+        geom_col() +
+        big_chart_theme +
+        labs(
+          title = "Review Count by Rating",
+          x = "Rating",
+          y = "Number of Reviews"
+        )
+    }
+      else if (input$chart_type == "reviews_by_date") {
+      p <- df |> 
+        count(review_date) |>
+        ggplot(aes(
+          x = review_date,
+          y = n,
+          group = 1,
+          text = paste0(
+            "Date: ", review_date,
+            "<br>Reviews: ", scales::comma(n)
+          )
+        )) +
+        geom_line(linewidth = 0.4) +
+        geom_point(size = 1.2) +
+        big_chart_theme +
+        labs(
+          title = "Number of Reviews Submitted by Date",
+          x = "Review Date",
+          y = "Number of Reviews"
+        )
       
     } else if (input$chart_type == "avg_rating_week") {
-      df |>
-        mutate(review_week = as.Date(cut(review_date, breaks = "week"))) |>
+      p <- df |>
+        filter(!is.na(review_date), !is.na(rating)) |>
+        mutate(review_week = lubridate::floor_date(review_date, unit = "week")) |>
         group_by(review_week) |>
-        summarise(avg_rating = mean(rating, na.rm = TRUE), reviews = n(), .groups = "drop") |>
-        ggplot(aes(review_week, avg_rating)) +
-        geom_line(linewidth = 1) +
-        geom_point(size = 1.5) +
-        theme_minimal(base_size = 12) +
-        labs(title = "Average Rating by Week", subtitle = paste(comma(nrow(df)), "filtered reviews"), x = "Week", y = "Average Rating")
+        summarise(
+          avg_rating = mean(rating, na.rm = TRUE),
+          reviews = n(),
+          .groups = "drop"
+        ) |>
+        ggplot(aes(
+          x = review_week,
+          y = avg_rating,
+          group = 1,
+          text = paste0(
+            "Week: ", review_week,
+            "<br>Average rating: ", round(avg_rating, 2),
+            "<br>Reviews: ", scales::comma(reviews)
+          )
+        )) +
+        geom_line(linewidth = 0.4) +
+        geom_point(size = 1.2) +
+        big_chart_theme +
+        labs(
+          title = "Average Rating by Week",
+          x = "Week",
+          y = "Average Rating"
+        )
       
     } else if (input$chart_type == "reviews_by_category_rating") {
-      df |> count(category, rating) |>
-        ggplot(aes(category, n, fill = factor(rating))) +
-        geom_col(position = "dodge") +
-        coord_flip() +
-        theme_minimal(base_size = 12) +
-        labs(title = "Reviews by Category and Rating", subtitle = paste(comma(nrow(df)), "filtered reviews"), x = "Category", y = "Number of Reviews", fill = "Rating")
+      category_rating_df <- df |> 
+        count(category, rating) |>
+        group_by(category) |>
+        mutate(percent = n / sum(n)) |>
+        ungroup() |>
+        mutate(
+          rating = factor(rating, levels = c("1", "2", "3", "4", "5"))
+        )
       
+      p <- category_rating_df |>
+        ggplot(aes(
+          x = category,
+          y = n,
+          fill = rating,
+          text = paste0(
+            "Category: ", category,
+            "<br>Rating: ", rating,
+            "<br>Reviews: ", scales::comma(n),
+            "<br>Percent within category: ", scales::percent(percent, accuracy = 0.1)
+          )
+        )) +
+        geom_col(position = position_stack(reverse = TRUE)) +
+        coord_flip() +
+        scale_y_continuous(labels = scales::comma) +
+        scale_fill_manual(
+          values = c(
+            "1" = "#D55E00",
+            "2" = "#E69F00",
+            "3" = "#0072B2",
+            "4" = "#009E73",
+            "5" = "#F0E442"
+          ),
+          breaks = c("1", "2", "3", "4", "5")
+        ) +
+        guides(fill = guide_legend(reverse = FALSE)) +
+        big_chart_theme +
+        labs(
+          title = "Reviews by Category and Rating",
+          x = NULL,
+          y = "Number of Reviews",
+          fill = "Rating"
+        )
     } else if (input$chart_type == "rating_group_category") {
-      df |>
+      # Create rating groups
+      df_grouped <- df |>
         mutate(
           rating_group = case_when(
             rating <= 2 ~ "Low (1-2)",
             rating == 3 ~ "Medium (3)",
             rating >= 4 ~ "High (4-5)",
             TRUE ~ "Unknown"
+          ),
+          rating_group = factor(
+            rating_group,
+            levels = c("Low (1-2)", "Medium (3)", "High (4-5)", "Unknown")
           )
         ) |>
         count(category, rating_group) |>
-        ggplot(aes(category, n, fill = rating_group)) +
-        geom_col(position = "stack") +
+        group_by(category) |>
+        mutate(percent = n / sum(n)) |>
+        ungroup()
+      
+      # Plot
+      p <- df_grouped |>
+        ggplot(aes(
+          x = category,
+          y = percent,
+          fill = rating_group,
+          text = paste0(
+            "Category: ", category,
+            "<br>Rating group: ", rating_group,
+            "<br>Reviews: ", scales::comma(n),
+            "<br>Percent: ", scales::percent(percent, accuracy = 0.1)
+          )
+        )) +
+        geom_col(position = position_stack(reverse = TRUE)) +
         coord_flip() +
-        theme_minimal(base_size = 12) +
-        labs(title = "Reviews by Category and Rating Group", subtitle = paste(comma(nrow(df)), "filtered reviews"), x = "Category", y = "Number of Reviews", fill = "Rating Group")
+        scale_y_continuous(labels = scales::percent_format()) +
+        scale_fill_manual(
+          values = c(
+            "Low (1-2)" = "#D55E00",
+            "Medium (3)" = "#0072B2",
+            "High (4-5)" = "#F0E442",
+            "Unknown" = "gray"
+          ),
+          breaks = c("Low (1-2)", "Medium (3)", "High (4-5)", "Unknown")
+        ) +
+        big_chart_theme +
+        labs(
+          title = "Reviews by Category and Rating Group",
+          x = NULL,
+          y = "Percent of Reviews",
+          fill = "Rating Group"
+        )
       
     } else if (input$chart_type == "low_rating_category") {
-      low_df <- df |> filter(rating <= 2) |> count(category, sort = TRUE)
+      low_df <- df |> 
+        filter(rating <= 2) |> 
+        count(category, sort = TRUE)
       
-      shiny::validate(shiny::need(nrow(low_df) > 0, "No low-rating reviews in the current filter."))
+      shiny::validate(
+        shiny::need(nrow(low_df) > 0, "No low-rating reviews in the current filter.")
+      )
       
-      low_df |>
-        ggplot(aes(n, reorder(category, n))) +
+      p <- low_df |>
+        ggplot(aes(
+          x = n,
+          y = reorder(category, n),
+          text = paste0(
+            "Category: ", category,
+            "<br>Low-rating reviews: ", scales::comma(n)
+          )
+        )) +
         geom_col() +
-        theme_minimal(base_size = 12) +
-        labs(title = "Low-Rating Reviews by Category", subtitle = "Ratings 1-2 only", x = "Number of Low-Rating Reviews", y = "Category")
+        big_chart_theme +
+        labs(
+          title = "Low-Rating Reviews by Category",
+          subtitle = "Ratings 1-2 only",
+          x = "Number of Low-Rating Reviews",
+          y = NULL
+        )
     }
+    
+    plotly::ggplotly(p, tooltip = "text") |>
+      plotly::layout(
+        font = list(size = 12),
+        title = list(
+          font = list(size = 15),
+          x = 0.5
+        ),
+        xaxis = list(
+          title = list(font = list(size = 12)),
+          tickfont = list(size = 12)
+        ),
+        yaxis = list(
+          title = list(font = list(size = 12)),
+          tickfont = list(size = 12)
+        ),
+        legend = list(
+          font = list(size = 12),
+          title = list(font = list(size = 12))
+        ),
+        margin = list(l = 70, r = 15, t = 35, b = 45)
+      ) |>
+      plotly::config(displayModeBar = FALSE)
   })
   
   # ============================================================
