@@ -1,6 +1,6 @@
 # NLP_LLM_FinalProject
 
-NLP Project
+NLP Project for STAT 6395 at Southern Methodist University
 
 Data used from Mexwell at Kaggle, licensed under CC BY 4.0
 https://creativecommons.org/licenses/by/4.0/
