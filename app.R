@@ -20,9 +20,9 @@ library(stringr)
 library(textstem)
 library(topicmodels)
 library(tm)
+# Just so I can try to publish..
 library(broom)
 library(magick)
-# Just so I can try to publish..
 library(RSQLite)
 # To fix LDA error when published online
 library(reshape2)
@@ -125,17 +125,13 @@ dataset_today <- max(as.Date(data_for_app$review_date), na.rm = TRUE)
 date_filter_instructions <- paste0(
   "Important date-filtering instructions:\n",
   "- The review_date column is stored as character text in YYYY-MM-DD format.\n",
-  "- Never use YEAR(review_date), MONTH(review_date), or DAY(review_date) directly.\n",
-  "- If extracting date parts, always cast first: YEAR(CAST(review_date AS DATE)), MONTH(CAST(review_date AS DATE)), DAY(CAST(review_date AS DATE)).\n",
-  "- Prefer simple string/date range filters when possible because review_date is formatted as YYYY-MM-DD.\n",
-  "- For a full year like 2026, use: review_date >= '2026-01-01' AND review_date <= '2026-12-31'.\n",
-  "- For a month like April 2026, use: review_date >= '2026-04-01' AND review_date <= '2026-04-30'.\n",
   "- When the user says 'today', automatically interpret today as ",
   format(dataset_today, "%Y-%m-%d"), ".\n",
   "- Do not ask the user to clarify today's date.\n",
   "- For requests like 'between April 15th and today', filter review_date from ",
   "2026-04-15 through ", format(dataset_today, "%Y-%m-%d"), ", inclusive.\n",
-  "- For date ranges, use review_date >= start date and review_date <= end date."
+  "- For date ranges, use review_date >= start date and review_date <= end date.",
+  "- For a full year like 2026, use: review_date >= '2026-01-01' AND review_date <= '2026-12-31'."
 )
 
 qc <- QueryChat$new(
@@ -239,9 +235,9 @@ issue_dictionary <- tibble::tribble(
   "Accuracy / Description", "description"
 )
 
-# ============================================================
-# CLAUDE-ONLY / LOCAL RETRIEVAL SETUP
-# ============================================================
+# -------------------------------------------------------------------
+# CLAUDE | LOCAL RETRIEVAL SETUP
+# -------------------------------------------------------------------
 
 tokenize_for_retrieval <- function(x) {
   x <- as.character(x)
@@ -541,7 +537,8 @@ server <- function(input, output, session) {
       biggest_issue = biggest_issue
     )
   })
-  
+
+  ## This function helps with copying the current plots to the PDF report
   save_report_plot <- function(plot_obj, filename, width = 8, height = 5) {
     ggplot2::ggsave(
       filename = filename,
@@ -552,7 +549,8 @@ server <- function(input, output, session) {
       dpi = 150
     )
   }
-  
+
+  ## This function is designed to help write the PDF report
   make_advanced_report_summary <- function() {
     adv <- advanced_data()
     df <- adv$filtered_reviews
@@ -680,9 +678,9 @@ server <- function(input, output, session) {
     )
   })
   
-  # ============================================================
-  # Advanced plots
-  # ============================================================
+  # -------------------------------------------------------------------
+  # Advanced insights plots
+  # -------------------------------------------------------------------
   
   advanced_chart_theme <- theme_minimal(base_size = 15) +
     theme(
@@ -793,7 +791,9 @@ server <- function(input, output, session) {
       save_report_plot(negative_plot(), negative_png)
       save_report_plot(common_issue_plot(), issues_png)
       save_report_plot(sentiment_pie_plot(), pie_png)
-      
+
+      ## A button is built, so it doesnt hog all the resources the moment the tab is visible
+      ## Designed to process/run on demand only
       lda_plot_for_report <- if (lda_is_available()) {
         tryCatch(
           current_advanced_plot("lda"),
@@ -1009,9 +1009,9 @@ server <- function(input, output, session) {
       )
   })
   
-  # ============================================================
-  # Chat helpers
-  # ============================================================
+  # -------------------------------------------------------------------
+  # Chat helpers, to analyze the plots and provide some insights
+  # -------------------------------------------------------------------
   
   infer_advanced_chart <- function(user_question) {
     q <- tolower(user_question %||% "")
@@ -1310,7 +1310,8 @@ server <- function(input, output, session) {
       pull(evidence) |>
       paste(collapse = "\n")
   }
-  
+
+  ## Build the chatbot promopts
   advanced_chat <- chat_anthropic(
     model = "claude-haiku-4-5",
     system_prompt = paste(
@@ -1498,20 +1499,21 @@ server <- function(input, output, session) {
     comma(nrow(df))
   })
   
-  output$past_month_reviews <- renderText({
-    all_df <- data_for_app |>
-      mutate(review_date = as.Date(review_date))
-    
-    max_date <- max(all_df$review_date, na.rm = TRUE)
-    
-    month_start <- lubridate::floor_date(max_date, unit = "month")
-    
-    scales::comma(sum(
-      all_df$review_date >= month_start &
-        all_df$review_date <= max_date,
-      na.rm = TRUE
-    ))
-  })
+output$past_month_reviews <- renderText({
+  df <- filtered_reviews() |>
+    mutate(review_date = as.Date(review_date))
+
+  req(nrow(df) > 0)
+
+  actual_today <- Sys.Date()
+  current_month_start <- lubridate::floor_date(actual_today, unit = "month")
+
+  scales::comma(sum(
+    df$review_date >= current_month_start &
+      df$review_date <= actual_today,
+    na.rm = TRUE
+  ))
+})
   
   output$filters_applied <- renderUI({
     tags$div(
@@ -1536,11 +1538,11 @@ server <- function(input, output, session) {
   
   output$empty_box <- renderUI(tags$div(""))
   
-  # ============================================================
+  # -------------------------------------------------------------------
   # Main chart
-  # ============================================================
+  # -------------------------------------------------------------------
   
-  # ---- Larger chart text theme ----
+  # ---- Adjust some themes and font sizes----
   big_chart_theme <- theme_minimal(base_size = 10) +
     theme(
       plot.title = element_text(size = 12, face = "bold", hjust = 0.7),
@@ -1794,9 +1796,9 @@ server <- function(input, output, session) {
       plotly::config(displayModeBar = FALSE)
   })
   
-  # ============================================================
-  # Review table
-  # ============================================================
+  # -------------------------------------------------------------------
+  # Review table, to display the raw data (filtered of course)
+  # -------------------------------------------------------------------
   
   output$review_table <- renderDT({
     df <- filtered_reviews()
