@@ -1800,19 +1800,9 @@ output$past_month_reviews <- renderText({
   # Review table, to display the raw data (filtered of course)
   # -------------------------------------------------------------------
   
-  output$review_table <- renderDT({
+    output$review_table <- renderDT({
     df <- filtered_reviews()
-    DT::datatable(
-     df,
-      options = list(
-        pageLength = 10,
-        lengthMenu = c(10, 25, 50, 100, 200),
-        scrollX = TRUE
-      ),
-      rownames = FALSE
-    )
-  })
-   req(nrow(df) > 0)
+    req(nrow(df) > 0)
     
     df |>
       transmute(Date = review_date, Category = category, Rating = rating, Review = text) |>
@@ -1822,8 +1812,8 @@ output$past_month_reviews <- renderText({
         width = "100%",
         options = list(
           dom = "lfrtip",
-          pageLength = 5,
-          lengthMenu = c(5, 8, 10, 15, 25, 50),
+          pageLength = 50,
+          lengthMenu = c(25, 50, 100, 200,500,1000),
           scrollX = TRUE,
           scrollY = "18vh",
           scrollCollapse = FALSE,
