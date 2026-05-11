@@ -1802,7 +1802,17 @@ output$past_month_reviews <- renderText({
   
   output$review_table <- renderDT({
     df <- filtered_reviews()
-    req(nrow(df) > 0)
+    DT::datatable(
+     df,
+      options = list(
+        pageLength = 10,
+        lengthMenu = c(10, 25, 50, 100, 200),
+        scrollX = TRUE
+      ),
+      rownames = FALSE
+    )
+  })
+   req(nrow(df) > 0)
     
     df |>
       transmute(Date = review_date, Category = category, Rating = rating, Review = text) |>
