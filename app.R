@@ -1317,6 +1317,21 @@ server <- function(input, output, session) {
       pull(evidence) |>
       paste(collapse = "\n")
   }
+  ## Adding this after running some stress tests
+  advanced_chat_rules <- paste(
+  "Strict chart interpretation rules:",
+  "- Always state which chart is being analyzed.",
+  "- For Positive Sentiment Over Time, say it shows positive sentiment word counts, not positive review counts.",
+  "- For Negative Sentiment Over Time, say it shows negative sentiment word counts, not negative review counts.",
+  "- Do not claim causes for spikes or trend changes from charts alone.",
+  "- Use phrases like 'the chart shows' or 'the reviews suggest'; do not say 'this was caused by' unless external evidence is provided.",
+  "- For issue charts, call them dictionary-matched issue flags, not verified complaints.",
+  "- Mention that issue detection depends on the manual issue dictionary.",
+  "- For LDA, say topic labels are tentative interpretations of top terms.",
+  "- Do not say a topic is most important unless topic prevalence across documents is explicitly available.",
+  "- If the user asks a vague follow-up like 'this chart' or 'what about this one', keep the last selected chart unless the UI or user clearly identifies a new chart.",
+  sep = "\n"
+)
 
   ## Build the chatbot promopts
   advanced_chat <- chat_anthropic(
@@ -1327,13 +1342,15 @@ server <- function(input, output, session) {
       "Only answer from the selected chart and the context explicitly tied to that selected chart.",
       "If the selected chart is unavailable, not visible, or not generated, say that directly and stop.",
       "Do not substitute another chart when the user asks about a specific chart.",
-      "For follow-up questions like 'from the charts?' or 'from the graph?', continue using the chart from the previous user turn when possible.",
+      "For follow-up questions like 'from the charts?', 'from the graph?', 'this chart', or 'what about this one?', continue using the chart from the previous user turn when possible.",
       "If the user asks about LDA and LDA has not been run, say the LDA Topic Modeling chart is not currently available and tell the user to click Run LDA.",
       "When the user asks what happened, what caused a spike, why a metric changed, or what is driving a result, analyze actual review text only when that evidence is relevant to the selected chart.",
       "Use only the evidence relevant to the selected chart; do not use unrelated chart summaries.",
       "Use cautious language: say the reviews suggest something, not that they prove an external cause.",
-      "Plain bullets only: normally 3 to 5 bullets, no headings, no bold. Be specific and evidence-based.",
-      "Do not use large Markdown headings. Do not start responses with # or ## headings. Use short bold section labels instead."
+      "Use plain bullets only. Normally use 3 to 5 bullets. Do not use Markdown headings, large headings, or bold labels.",
+      "Do not invent chart values, topic terms, review examples, dates, counts, or causes.",
+      advanced_chat_rules,
+      sep = "\n\n"
     )
   )
   
