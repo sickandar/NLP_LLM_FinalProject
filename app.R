@@ -662,8 +662,33 @@ ui <- page_navbar(
           card(
             style = "grid-column: 1 / -1;",
             card_header("LDA Topic Modeling"),
-            div(style = "margin-bottom: 0.75rem;", actionButton("run_lda", "Run LDA", class = "btn-primary")),
-            plotOutput("lda_topics_plot", height = "420px")
+            div(
+              style = "margin-bottom: 0.75rem;",
+              actionButton("run_lda", "Run LDA", class = "btn-primary")
+            ),
+            plotOutput("lda_topics_plot", height = "420px"),
+            
+            div(
+              style = "padding: 0.75rem 1rem 1rem 1rem; font-size: 0.90rem; line-height: 1.35;",
+              h5("What this panel shows"),
+              p(
+                "LDA topic modeling is used to find groups of words that commonly appear together ",
+                "in the currently filtered review text. Each topic represents a possible theme in the reviews."
+              ),
+              
+              h5("How to interpret it"),
+              tags$ul(
+                tags$li("Each topic is shown with its most important words."),
+                tags$li("Words with higher values are more strongly associated with that topic."),
+                tags$li("Use the top words to give each topic a plain-language label, such as price, delivery, product quality, or usability."),
+                tags$li("Topics are exploratory. They suggest possible patterns, but they should be checked against the actual review text.")
+              ),
+              
+              p(
+                strong("Important: "),
+                "Run LDA after applying any filters. The topic model is based only on the reviews currently included in the filtered dataset."
+              )
+            )
           )
         )
       ),
