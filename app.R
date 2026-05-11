@@ -120,18 +120,20 @@ data_for_app <- reviews |>
 
 # ---- Dynamic date context for QueryChat, -----
 # -----so that QueryChat knows what today's date is ----
-dataset_today <- max(as.Date(data_for_app$review_date), na.rm = TRUE)
+dataset_today <- Sys.Date()
 
 date_filter_instructions <- paste0(
   "Important date-filtering instructions:\n",
   "- The review_date column is stored as character text in YYYY-MM-DD format.\n",
-  "- When the user says 'today', automatically interpret today as ",
-  format(dataset_today, "%Y-%m-%d"), ".\n",
+  "- Today is ", format(Sys.Date(), "%Y-%m-%d"), ".\n",
+  "- When the user asks what today's date is, answer with ", format(Sys.Date(), "%Y-%m-%d"), ".\n",
+  "- When the user says 'today', automatically interpret today as ", format(Sys.Date(), "%Y-%m-%d"), ".\n",
   "- Do not ask the user to clarify today's date.\n",
-  "- For requests like 'between April 15th and today', filter review_date from ",
-  "2026-04-15 through ", format(dataset_today, "%Y-%m-%d"), ", inclusive.\n",
-  "- For date ranges, use review_date >= start date and review_date <= end date.",
-  "- For a full year like 2026, use: review_date >= '2026-01-01' AND review_date <= '2026-12-31'."
+  "- Never use YEAR(review_date), MONTH(review_date), or DAY(review_date) directly.\n",
+  "- If extracting date parts, always cast first: YEAR(CAST(review_date AS DATE)), MONTH(CAST(review_date AS DATE)), DAY(CAST(review_date AS DATE)).\n",
+  "- Prefer simple date range filters because review_date is formatted as YYYY-MM-DD.\n",
+  "- For a full year like 2026, use: review_date >= '2026-01-01' AND review_date <= '2026-12-31'.\n",
+  "- For date ranges, use review_date >= start date and review_date <= end date."
 )
 
 qc <- QueryChat$new(
