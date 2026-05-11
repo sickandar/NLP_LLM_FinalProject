@@ -121,14 +121,19 @@ data_for_app <- reviews |>
 # ---- Dynamic date context for QueryChat, -----
 # -----so that QueryChat knows what today's date is ----
 dataset_today <- Sys.Date()
+app_now <- Sys.time()
+app_today <- as.Date(app_now)
+
 
 date_filter_instructions <- paste0(
-  "Important date-filtering instructions:\n",
+  "Important date and time instructions:\n",
   "- The review_date column is stored as character text in YYYY-MM-DD format.\n",
-  "- Today is ", format(Sys.Date(), "%Y-%m-%d"), ".\n",
-  "- When the user asks what today's date is, answer with ", format(Sys.Date(), "%Y-%m-%d"), ".\n",
-  "- When the user says 'today', automatically interpret today as ", format(Sys.Date(), "%Y-%m-%d"), ".\n",
-  "- Do not ask the user to clarify today's date.\n",
+  "- Today's date is ", format(app_today, "%Y-%m-%d"), ".\n",
+  "- The current time is ", format(app_now, "%I:%M %p %Z"), ".\n",
+  "- When the user asks what today's date is, answer with ", format(app_today, "%Y-%m-%d"), ".\n",
+  "- When the user asks what time it is, answer with ", format(app_now, "%I:%M %p %Z"), ".\n",
+  "- When the user says 'today', automatically interpret today as ", format(app_today, "%Y-%m-%d"), ".\n",
+  "- Do not ask the user to clarify today's date or current time.\n",
   "- Never use YEAR(review_date), MONTH(review_date), or DAY(review_date) directly.\n",
   "- If extracting date parts, always cast first: YEAR(CAST(review_date AS DATE)), MONTH(CAST(review_date AS DATE)), DAY(CAST(review_date AS DATE)).\n",
   "- Prefer simple date range filters because review_date is formatted as YYYY-MM-DD.\n",
