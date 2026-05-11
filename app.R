@@ -1223,16 +1223,16 @@ server <- function(input, output, session) {
   })
   
   unavailable_plot <- function(title, message) {
-    ggplot() +
-      theme_void(base_size = 14) +
-      annotate(
-        "text",
+    ggplot2::ggplot() +
+      ggplot2::theme_void(base_size = 14) +
+      ggplot2::annotate(
+        geom = "text",
         x = 0,
         y = 0,
         label = message,
         size = 5
       ) +
-      labs(title = title)
+      ggplot2::labs(title = title)
   }
   
   save_unavailable_chart_png <- function(title, message) {
@@ -1547,30 +1547,10 @@ server <- function(input, output, session) {
     last_advanced_chart(chart_key)
     chart_title <- advanced_chart_title(chart_key)
     
-    plot_file <- tryCatch(
-      {
-        if (identical(chart_key, "lda") && !lda_is_available()) {
-          save_unavailable_chart_png(
-            "LDA Topic Modeling",
-            "LDA topic chart is not available yet. Click Run LDA to generate topics."
-          )
-        } else {
-          save_advanced_chart_png(chart_key)
-        }
-      },
-      error = function(e) {
-        save_unavailable_chart_png(
-          chart_title,
-          paste("The selected chart is not available:", e$message)
-        )
-      }
-    )
-    
     if (identical(chart_key, "lda") && !lda_is_available()) {
       chat_append(
         "advanced_chat",
         advanced_chat$stream_async(
-          content_image_file(plot_file),
           sprintf(
             "Current filter: %s (%s of %s rows).",
             qc_vals$title() %||% "none (all data)",
@@ -1579,8 +1559,8 @@ server <- function(input, output, session) {
           ),
           paste(
             "The user asked about the LDA Topic Modeling chart.",
-            "The LDA chart is not currently available or visible because Run LDA has not been clicked for the current filtered data.",
-            "Do not answer from the positive sentiment, negative sentiment, issue, sentiment split, or any other Advanced Insights chart.",
+            "The LDA chart is not currently available because Run LDA has not been clicked for the current filtered data.",
+            "Do not answer from any other chart.",
             "Do not infer LDA results from sentiment, issue, or review evidence.",
             "State that the LDA chart is unavailable and tell the user to click Run LDA.",
             "User question:", input$advanced_chat_user_input
@@ -1589,6 +1569,16 @@ server <- function(input, output, session) {
       )
       return()
     }
+    
+    plot_file <- tryCatch(
+      save_advanced_chart_png(chart_key),
+      error = function(e) {
+        save_unavailable_chart_png(
+          chart_title,
+          paste("The selected chart is not available:", e$message)
+        )
+      }
+    )
     
     daily_sentiment <- sentiment_df |>
       group_by(review_date) |>
