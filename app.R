@@ -738,7 +738,7 @@ ui <- page_navbar(
         tags$ul(
           tags$li(strong("Name: "), "Sickandar Akhthar"),
           tags$li(strong("GitHub Link: "), "https://github.com/sickandar/NLP_LLM_FinalProject"),
-          tags$li(strong("Tutorial Video Link: "), "PLACEHOLDER - Tutorial or demo video link"),
+          tags$li(strong("Tutorial Video Link: "), "https://smu.app.box.com/s/i8mqt5gipbof65znas2ei4b7wzd42em2"),
           tags$li(strong("Data Source Link: "), "https://www.kaggle.com/datasets/mexwell/fake-reviews-dataset"),
           tags$li(strong("Assignment/Class: "), "STAT 6395 - Final Project")
         ),
