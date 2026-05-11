@@ -39,6 +39,13 @@ read_md_or_default <- function(file, default_text) {
   if (file.exists(file)) paste(readLines(file, warn = FALSE), collapse = "\n") else default_text
 }
 
+## Github image loader for tutorial
+github_header <- "https://raw.githubusercontent.com/sickandar/NLP_LLM_FinalProject/main/images"
+
+github_img <- function(file) {
+  paste0(github_header, "/", file)
+}
+
 # Citation: Salminen, J., Kandpal, C., Kamel, A. M., Jung, S., & Jansen, B. J. (2022). 
 # Creating and detecting fake reviews of online products. Journal of Retailing and Consumer Services, 64, 102771.
 # https://doi.org/10.1016/j.jretconser.2021.102771
@@ -169,7 +176,8 @@ qc <- QueryChat$new(
 # -------------------------------------------------------------------
 #### ISSUE DICTIONARY
 # -------------------------------------------------------------------
-
+## Custom dictionary to find the words to match against, to understand the most
+##  common issues mentioned in each review.
 issue_dictionary <- tibble::tribble(
   ~issue, ~word,
   "Price / Value", "price",
@@ -419,40 +427,145 @@ ui <- page_navbar(
   
   nav_panel(
     "1. Tutorial/How to use",
+    
     layout_columns(
-      col_widths = c(6, 6),
+      col_widths = c(9, 3),
       
       card(
-        card_header("How to Use This Dashboard"),
-        div(
-          style = "padding: 1rem; line-height: 1.35;",
-          tags$h5("1. Filter the review data"),
-          tags$p("Use the filter chat to ask for subsets of the review dataset in plain language."),
-          tags$ul(
-            tags$li("Example: Filter to Electronics reviews from April."),
-            tags$li("Example: Show reviews with rating below 3."),
-            tags$li("Example: Show reviews that mention packaging or delivery.")
+        card_header("Dashboard Explainer"),
+        card_body(
+          
+          h2("Dashboard Overview"),
+          p(
+            "This dashboard helps users explore customer review data through natural-language filtering, ",
+            "summary charts, review tables, sentiment analysis topic modeling, and an LLM-powered explanation chat."
           ),
           
-          tags$h5("2. Review the summary boxes and charts"),
-          tags$p("The dashboard updates the filtered review count, average rating, current filters, top category, and summary charts based on the active filter."),
+          hr(),
           
-          tags$h5("3. Inspect the filtered review table"),
-          tags$p("Use the table search box, sorting, and page-size dropdown to inspect the filtered review records."),
+          h3("Tab 2: Data Filter and Basic Summary"),
+          p(
+            "The Data Filter tab is used to filter the review dataset, summarize the filtered results, ",
+            "inspect charts, and review the matching customer review records."
+          ),
           
-          tags$h5("4. Use Advanced Insights"),
-          tags$p("The Advanced Insights tab shows sentiment trends, issue summaries, sentiment split, and LDA topic modeling."),
+          tags$img(
+            src = github_img("Filter_Tab.png"),
+            style = "width:100%; border:1px solid #555; border-radius:8px; margin-bottom:1rem;"
+          ),
           
-          tags$h5("5. Ask the Advanced Insights chatbot"),
-          tags$p("Use the Advanced Insights chat to ask questions about the charts. For LDA, click Run LDA first.")
+          h4("P1: Provide Instructions to Filter Data"),
+          p(
+            "Panel P1 contains the natural-language filtering tool. Users can type instructions into the text box marked S1. ",
+            "This text box lets users enter commands such as:"
+          ),
+          tags$ul(
+            tags$li("Show reviews with rating below 3."),
+            tags$li("Filter to Electronics reviews."),
+            tags$li("Show reviews from April."),
+            tags$li("Show reviews that mention packaging or delivery."),
+            tags$li("Clear all filters.")
+          ),
+          p(
+            "After a command is submitted, the dashboard updates the charts, summary boxes, and review table using the filtered dataset."
+          ),
+          
+          h4("P2: Summary Charts"),
+          p(
+            "Panel P2 displays charts for the currently filtered data. The dropdown marked S4 lets users choose which chart to display."
+          ),
+          tags$ul(
+            tags$li(strong("Count of reviews by rating: "), "Shows how many reviews fall into each rating value."),
+            tags$li(strong("Count of reviews by review date: "), "Shows the number of reviews over time."),
+            tags$li(strong("Average rating by week: "), "Shows how average customer rating changes by week."),
+            tags$li(strong("Count by category + rating: "), "Compares review counts across product categories and rating values."),
+            tags$li(strong("Count by category + rating group: "), "Groups ratings into broader rating groups and compares them by category.")
+          ),
+          
+          h4("P3: Summary Boxes"),
+          p("Panel P3 contains six summary boxes that update when filters are applied."),
+          tags$ul(
+            tags$li(strong("Average Rating of Filtered Reviews: "), "Displays the average rating for the current filtered dataset."),
+            tags$li(strong("Filtered Count of Reviews: "), "Shows how many reviews are currently included after filtering."),
+            tags$li(strong("Current Month Review Count: "), "Shows how many filtered reviews fall in the current month."),
+            tags$li(strong("Current Filters Applied: "), "Displays the active filter description."),
+            tags$li(strong("Top Category: "), "Shows the category with the highest review count in the filtered data."),
+            tags$li(strong("All Available Unfiltered Categories: "), "Lists all review categories available in the original dataset.")
+          ),
+          
+          h4("Filtered Reviews Table"),
+          p(
+            "The Filtered Reviews section displays the individual review records that match the current filter. ",
+            "The Show entries dropdown marked S2 controls how many rows are displayed at one time. ",
+            "The Search box marked S3 lets users search within the filtered review table."
+          ),
+          
+          hr(),
+          
+          h3("Tab 3: Advanced Insights"),
+          p(
+            "The Advanced Insights tab provides deeper analysis of the filtered review data, including sentiment trends, ",
+            "common issue detection, sentiment breakdowns, LDA topic modeling, chatbot interpretation, and PDF export."
+          ),
+          
+          tags$img(
+            src = github_img("Analytics_Tab_01.png"),
+            style = "width:100%; border:1px solid #555; border-radius:8px; margin-bottom:1rem;"
+          ),
+          
+          h4("P4: Advanced Insight Plots"),
+          p("Panel P4 contains four plots, excluding the LDA topic modeling section."),
+          tags$ul(
+            tags$li(strong("Positive Sentiment Over Time: "), "Shows how positive sentiment word counts change over time."),
+            tags$li(strong("Negative Sentiment Over Time: "), "Shows how negative sentiment word counts change over time."),
+            tags$li(strong("Most Common Issue by Category: "), "Shows the most frequently detected issue type within each category based on the custom issue dictionary."),
+            tags$li(strong("Sentiment Split: "), "Shows the overall split between positive, negative, and neutral sentiment groups.")
+          ),
+          
+          h4("S5: Ask About Advanced Insights"),
+          p(
+            "The text box marked S5 is where users can ask the chatbot questions about the advanced charts and analysis. ",
+            "For example, users can ask what a sentiment trend means, which category has the most common issue, ",
+            "or how to interpret the current filtered results."
+          ),
+          
+          h4("S6: Download Advanced Insights PDF"),
+          p(
+            "The button marked S6 exports the advanced insights into a PDF report. ",
+            "The PDF export summarizes the charts, filtered data context, and advanced analysis results."
+          ),
+          
+          p(
+            strong("Important: "),
+            "The PDF export works after LDA is run. Run the LDA model first so that the topic modeling results are available for the exported report."
+          ),
+          
+          
+          h4("LDA Topic Modeling Section"),
+          
+          tags$img(
+            src = github_img("Analytics_Tab_02.png"),
+            style = "width:100%; border:1px solid #555; border-radius:8px; margin-bottom:1rem;"
+          ),
+          
+          h4("P5: LDA Topic Modeling"),
+          p(
+            "If you scroll down, you will see panel P5 contains the LDA topic modeling output. LDA is used to identify common themes in the filtered review text. ",
+            "The topic model groups frequently co-occurring terms into topics, which can help users understand what customers are discussing."
+          ),
+          
+          h4("S7: Run LDA Button"),
+          p(
+            "The button marked S7 runs the LDA topic model on the currently filtered review data. ",
+            "Users should apply any desired filters first, then click Run LDA to generate topics for that subset of reviews."
+          )
         )
       ),
       
       card(
         card_header("Suggested Test Questions"),
-        div(
-          style = "padding: 1rem; line-height: 1.35;",
-          tags$h5("Filter examples"),
+        card_body(
+          h4("Filter examples"),
           tags$ul(
             tags$li("Filter to Electronics reviews from 2026."),
             tags$li("Filter between April 15 and today."),
@@ -460,7 +573,7 @@ ui <- page_navbar(
             tags$li("Clear all filters.")
           ),
           
-          tags$h5("Advanced Insights examples"),
+          h4("Advanced Insights examples"),
           tags$ul(
             tags$li("Analyze the Positive Sentiment Over Time chart."),
             tags$li("What does the Negative Sentiment Over Time chart show?"),
@@ -468,7 +581,7 @@ ui <- page_navbar(
             tags$li("What can you tell me about LDA topic modeling?")
           ),
           
-          tags$h5("Important notes"),
+          h4("Important notes"),
           tags$ul(
             tags$li("Sentiment trends are based on sentiment word counts."),
             tags$li("Issue charts are based on dictionary-matched issue terms."),
@@ -560,32 +673,80 @@ ui <- page_navbar(
   
   nav_panel(
     "4. More Information",
-    layout_columns(
-      col_widths = c(6, 6),
-      card(
-        card_header("Project Notes"),
-        div(
-          style = "min-height: 300px; padding: 1rem;",
-          "This dashboard analyzes customer review data using tidy text preprocessing, lemmatization, sentiment analysis, issue classification, LDA topic modeling, and retrieval-augmented LLM interpretation."
+    card(
+      card_header("Information About This Dashboard"),
+      card_body(
+        h3("Project Overview"),
+        p(
+          "This dashboard analyzes customer review data using NLP, sentiment analysis, ",
+          "issue classification, LDA topic modeling, local retrieval, and LLM-based interpretation."
+        ),
+        
+        h4("Project Information"),
+        tags$ul(
+          tags$li(strong("Name: "), "Sickandar Akhthar"),
+          tags$li(strong("GitHub Link: "), "https://github.com/sickandar/NLP_LLM_FinalProject"),
+          tags$li(strong("Tutorial Video Link: "), "PLACEHOLDER - Tutorial or demo video link"),
+          tags$li(strong("Data Source Link: "), "https://www.kaggle.com/datasets/mexwell/fake-reviews-dataset"),
+          tags$li(strong("Assignment/Class: "), "STAT 6395 - Final Project")
+        ),
+        
+        h3("How It Was Built"),
+        p(
+          "The app was built in R using Shiny and bslib. QueryChat is used for natural-language ",
+          "data filtering, while ggplot2, plotly, and DT are used for charts and review tables. ",
+          "The advanced analysis uses tidytext, textstem, topicmodels, and a manually defined issue dictionary."
+        ),
+        
+        h4("Main Workflow"),
+        tags$ol(
+          tags$li("Import and clean the customer review dataset."),
+          tags$li("Use QueryChat to filter reviews through natural-language instructions."),
+          tags$li("Summarize filtered reviews with value boxes, charts, and tables."),
+          tags$li("Use tidy text processing and lemmatization to prepare review text."),
+          tags$li("Apply Bing lexicon sentiment analysis to identify positive and negative review patterns."),
+          tags$li("Classify common issues using a custom issue dictionary."),
+          tags$li("Run LDA topic modeling to identify exploratory themes in filtered reviews."),
+          tags$li("Use local retrieval to provide relevant review evidence to the chatbot."),
+          tags$li("Use Claude Haiku through ellmer and shinychat to explain dashboard results.")
+        ),
+        
+        h3("LLM and Retrieval Design"),
+        p(
+          "The chatbot is designed to answer questions about the filtered dashboard results, ",
+          "sentiment trends, issue patterns, charts, and LDA topics. It uses retrieved review evidence ",
+          "and dashboard summaries as context so that responses are grounded in the actual data rather than general knowledge alone."
+        ),
+        
+        h3("Files Needed to Power the Dashboard"),
+        p(
+          "The following files are needed to run and publish the dashboard. ",
+          "They are included in the GitHub repository:"
+        ),
+        tags$ul(
+          tags$li("app.R"),
+          tags$li("fakereviewsdataset.csv"),
+          tags$li("Manifest.json"),
+          tags$li("reviews_description.md"),
+          tags$li("reviews_greeting.md"),
+          tags$li("reviews_instruction.md")
+        ),
+        
+        h3("Limitations"),
+        tags$ul(
+          tags$li("Lexicon-based sentiment analysis may miss negation, sarcasm, and context."),
+          tags$li("Issue classification depends on the manually defined issue dictionary."),
+          tags$li("LDA topic modeling is exploratory and may change depending on filters and topic settings."),
+          tags$li("Local lexical retrieval may miss semantically similar reviews that use different wording."),
+          tags$li("LLM responses should be treated as summaries of the provided context, not independent statistical proof.")
+        ),
+        
+        h3("Reproducibility Notes"),
+        p(
+          "To reproduce the dashboard, clone or download the GitHub repository, install the required R packages, ",
+          "configure the LLM API credentials, place the required files in the project directory, and run app.R. ",
+          "The app is intended to be published online so the final product can be accessed through a hyperlink."
         )
-      ),
-      card(
-        card_header("Data / Method Details"),
-        div(
-          style = "min-height: 300px; padding: 1rem;",
-          "Methods: Bing lexicon sentiment analysis calculates positive and negative word counts. Common issue classification uses a manually defined issue dictionary and reports the most common issue for each category in the filtered data. LDA topic modeling estimates exploratory topics from filtered review text. The chatbot receives chart context, filtered summaries, spike-date evidence, issue counts, LDA terms, and locally retrieved review evidence from the user's question."
-        )
-      ),
-      card(
-        card_header("Limitations"),
-        div(
-          style = "min-height: 300px; padding: 1rem;",
-          "Limitations: Lexicon sentiment may miss negation, sarcasm, and context. Common issue classification depends on the manually defined dictionary. LDA topics are exploratory and may be unstable for small filtered datasets. The retrieval function uses local lexical matching with tf-idf-style scoring. This keeps the app Claude-only, but it may miss semantically similar reviews that do not share words with the user question."
-        )
-      ),
-      card(
-        card_header("Expected Dataset Columns Used"),
-        div(style = "min-height: 300px; padding: 1rem;", "primary_id, review_date, category, rating, text")
       )
     )
   )
@@ -1669,9 +1830,9 @@ server <- function(input, output, session) {
     )
   })
   
-  # ============================================================
+  # -------------------------------------------------------------------
   # Summary outputs
-  # ============================================================
+  # -------------------------------------------------------------------
   
   output$avg_rating <- renderText({
     df <- filtered_reviews()
