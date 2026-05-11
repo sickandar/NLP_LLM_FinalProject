@@ -294,6 +294,33 @@ ui <- page_navbar(
   ##  of the dashboard, and make the colors uniform.
   ##  I had trouble with making sure the text aligned properly.
   header = tags$style(HTML("
+  
+    html, body {
+    background-color: #456380 !important;
+    color: #ffffff !important;
+  }
+
+  .bslib-page-navbar,
+  .page-main,
+  .container-fluid,
+  .navbar,
+  .tab-content,
+  .tab-pane {
+    background-color: #456380 !important;
+  }
+
+  .card,
+  .card-body {
+    background-color: #2b3e50 !important;
+    color: #ffffff !important;
+  }
+
+  .shiny-output-error,
+  .shiny-output-error-validation {
+    color: #f8d7da !important;
+  }
+
+
   .card-header { 
     border-bottom: 1px solid #444 !important; 
     font-weight: 700 !important;
@@ -305,13 +332,13 @@ ui <- page_navbar(
   }
 
   .med-value-box .value-box-title { 
-    font-size: 0.75rem !important; 
+    font-size: 0.95rem !important; 
     line-height: 1.05 !important; 
     font-weight: 700 !important;
   }
 
   .med-value-box .value-box-value { 
-    font-size: 0.95rem !important; 
+    font-size: 1.25rem !important; 
     line-height: 1.05 !important; 
     word-break: break-word; 
     white-space: normal; 
