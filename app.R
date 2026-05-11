@@ -276,54 +276,215 @@ make_query_terms <- function(user_question) {
 
 ui <- page_navbar(
   title = "Customer Review Dashboard",
-  theme = bs_theme(version = 5, bootswatch = "superhero"),
+  theme = bs_theme(
+    #version = 5,
+    bootswatch = "superhero"#,
+    #primary = "#4dabf7"
+  ),
   
-  tags$style(HTML("
-    .card-header { border-bottom: 1px solid #444 !important; }
-    .value-box { background-color: #1b1f22 !important; border: 1px solid #444 !important; }
-    .med-value-box .value-box-title { font-size: 0.75rem !important; line-height: 1.05 !important; }
-    .med-value-box .value-box-value { font-size: 0.95rem !important; line-height: 1.05 !important; word-break: break-word; white-space: normal; }
-    .med-value-box .value-box-area { padding: 0.45rem !important; }
-    .med-value-box { min-height: 90px !important; }
+  ## This is GenAI generated, to help with cleaning up appearance
+  ##  of the dashboard, and make the colors uniform.
+  ##  I had trouble with making sure the text aligned properly.
+  header = tags$style(HTML("
+  .card-header { 
+    border-bottom: 1px solid #444 !important; 
+    font-weight: 700 !important;
+  }
 
-    #advanced_chat h1,
-    #advanced_chat h2,
-    #advanced_chat h3 {
-      font-size: 1rem !important;
-      line-height: 1.2 !important;
-      margin-top: 0.4rem !important;
-      margin-bottom: 0.3rem !important;
-      font-weight: 700 !important;
-    }
+  .value-box { 
+    background-color: #1b1f22 !important; 
+    border: 1px solid #444 !important; 
+  }
 
-    #advanced_chat p {
-      font-size: 0.90rem !important;
-      line-height: 1.25 !important;
-    }
+  .med-value-box .value-box-title { 
+    font-size: 0.75rem !important; 
+    line-height: 1.05 !important; 
+    font-weight: 700 !important;
+  }
 
-    #advanced_chat li {
-      font-size: 0.90rem !important;
-      line-height: 1.25 !important;
-    }
+  .med-value-box .value-box-value { 
+    font-size: 0.95rem !important; 
+    line-height: 1.05 !important; 
+    word-break: break-word; 
+    white-space: normal; 
+  }
 
-    .table-fill-card { flex: 1 1 45%; min-height: 45%; overflow: visible !important; }
-    .table-fill-card .card-body { overflow: visible !important; padding-bottom: 1rem; }
-    .table-fill-card .dataTables_wrapper, .table-fill-card table.dataTable { width: 100% !important; }
-    .dataTables_wrapper .dataTables_length { float: left !important; margin-bottom: 0.6rem; }
-    .dataTables_wrapper .dataTables_filter { float: right !important; margin-bottom: 0.6rem; }
-    .dataTables_scroll { clear: both; margin-bottom: 0.6rem; }
-    .dataTables_scrollBody { overflow: auto !important; }
-    .dataTables_wrapper .dataTables_info { float: left !important; clear: left !important; padding-top: 0.6rem !important; }
-    .dataTables_wrapper .dataTables_paginate { float: right !important; padding-top: 0.3rem !important; }
-  ")),
+  .med-value-box .value-box-area { 
+    padding: 0.45rem !important; 
+  }
+
+  .med-value-box { 
+    min-height: 90px !important; 
+  }
+
+   /* Better top navigation tab appearance - orange accent */
+  .navbar-nav .nav-link {
+    font-weight: 600 !important;
+    border-radius: 0.5rem !important;
+    margin-right: 0.25rem !important;
+    padding: 0.55rem 0.85rem !important;
+    color: #ffffff !important;
+  }
+  
+  .navbar-nav .nav-link.active {
+    background-color: #df691a !important;
+    border: 1px solid #f0ad4e !important;
+    color: #ffffff !important;
+  }
+  
+  .navbar-nav .nav-link:hover {
+    background-color: rgba(223, 105, 26, 0.35) !important;
+    color: #ffffff !important;
+  }
+  
+  
+
+
+  /* Make QueryChat / filter-area scrollbar more visible */
+  .filter-scroll-area {
+    height: calc(100vh - 150px);
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: auto;
+    scrollbar-color: #cfd8dc #263238;
+  }
+
+  .filter-scroll-area::-webkit-scrollbar {
+    width: 14px;
+  }
+
+  .filter-scroll-area::-webkit-scrollbar-track {
+    background: #263238;
+    border-radius: 8px;
+  }
+
+  .filter-scroll-area::-webkit-scrollbar-thumb {
+    background-color: #cfd8dc;
+    border-radius: 8px;
+    border: 3px solid #263238;
+  }
+
+  .filter-scroll-area::-webkit-scrollbar-thumb:hover {
+    background-color: #ffffff;
+  }
+
+  .table-fill-card { 
+    flex: 1 1 45%; 
+    min-height: 45%; 
+    overflow: visible !important; 
+  }
+
+  .table-fill-card .card-body { 
+    overflow: visible !important; 
+    padding-bottom: 1rem; 
+  }
+
+  .table-fill-card .dataTables_wrapper, 
+  .table-fill-card table.dataTable { 
+    width: 100% !important; 
+  }
+
+  .dataTables_wrapper .dataTables_length { 
+    float: left !important; 
+    margin-bottom: 0.6rem; 
+  }
+
+  .dataTables_wrapper .dataTables_filter { 
+    float: right !important; 
+    margin-bottom: 0.6rem; 
+  }
+
+  .dataTables_scroll { 
+    clear: both; 
+    margin-bottom: 0.6rem; 
+  }
+
+  .dataTables_scrollBody { 
+    overflow: auto !important; 
+  }
+
+  .dataTables_wrapper .dataTables_info { 
+    float: left !important; 
+    clear: left !important; 
+    padding-top: 0.6rem !important; 
+  }
+
+  .dataTables_wrapper .dataTables_paginate { 
+    float: right !important; 
+    padding-top: 0.3rem !important; 
+  }
+ 
+ 
+")),
   
   nav_panel(
-    "1. Data filter and basic summary",
+    "1. Tutorial/How to use",
+    layout_columns(
+      col_widths = c(6, 6),
+      
+      card(
+        card_header("How to Use This Dashboard"),
+        div(
+          style = "padding: 1rem; line-height: 1.35;",
+          tags$h5("1. Filter the review data"),
+          tags$p("Use the filter chat to ask for subsets of the review dataset in plain language."),
+          tags$ul(
+            tags$li("Example: Filter to Electronics reviews from April."),
+            tags$li("Example: Show reviews with rating below 3."),
+            tags$li("Example: Show reviews that mention packaging or delivery.")
+          ),
+          
+          tags$h5("2. Review the summary boxes and charts"),
+          tags$p("The dashboard updates the filtered review count, average rating, current filters, top category, and summary charts based on the active filter."),
+          
+          tags$h5("3. Inspect the filtered review table"),
+          tags$p("Use the table search box, sorting, and page-size dropdown to inspect the filtered review records."),
+          
+          tags$h5("4. Use Advanced Insights"),
+          tags$p("The Advanced Insights tab shows sentiment trends, issue summaries, sentiment split, and LDA topic modeling."),
+          
+          tags$h5("5. Ask the Advanced Insights chatbot"),
+          tags$p("Use the Advanced Insights chat to ask questions about the charts. For LDA, click Run LDA first.")
+        )
+      ),
+      
+      card(
+        card_header("Suggested Test Questions"),
+        div(
+          style = "padding: 1rem; line-height: 1.35;",
+          tags$h5("Filter examples"),
+          tags$ul(
+            tags$li("Filter to Electronics reviews from 2026."),
+            tags$li("Filter between April 15 and today."),
+            tags$li("Show reviews with rating 1 or 2."),
+            tags$li("Clear all filters.")
+          ),
+          
+          tags$h5("Advanced Insights examples"),
+          tags$ul(
+            tags$li("Analyze the Positive Sentiment Over Time chart."),
+            tags$li("What does the Negative Sentiment Over Time chart show?"),
+            tags$li("What does the Most Common Issue by Category chart show?"),
+            tags$li("What can you tell me about LDA topic modeling?")
+          ),
+          
+          tags$h5("Important notes"),
+          tags$ul(
+            tags$li("Sentiment trends are based on sentiment word counts."),
+            tags$li("Issue charts are based on dictionary-matched issue terms."),
+            tags$li("LDA topics are exploratory and should be interpreted cautiously.")
+          )
+        )
+      )
+    )
+  ),
+  nav_panel(
+    "2. Data filter and basic summary",
     layout_columns(
       col_widths = c(3, 9),
       card(
         full_screen = TRUE,
-        card_header("Filter Data"),
+        card_header("Provide instructions to filter data"),
         div(style = "height: calc(100vh - 150px); overflow: hidden;", qc$ui())
       ),
       div(
@@ -367,7 +528,7 @@ ui <- page_navbar(
   ),
   
   nav_panel(
-    "2. Advanced Insights",
+    "3. Advanced Insights",
     layout_columns(
       col_widths = c(8, 4),
       card(
@@ -398,7 +559,7 @@ ui <- page_navbar(
   ),
   
   nav_panel(
-    "3. More Information",
+    "4. More Information",
     layout_columns(
       col_widths = c(6, 6),
       card(
@@ -544,7 +705,7 @@ server <- function(input, output, session) {
       biggest_issue = biggest_issue
     )
   })
-
+  
   ## This function helps with copying the current plots to the PDF report
   save_report_plot <- function(plot_obj, filename, width = 8, height = 5) {
     ggplot2::ggsave(
@@ -556,7 +717,7 @@ server <- function(input, output, session) {
       dpi = 150
     )
   }
-
+  
   ## This function is designed to help write the PDF report
   make_advanced_report_summary <- function() {
     adv <- advanced_data()
@@ -798,7 +959,7 @@ server <- function(input, output, session) {
       save_report_plot(negative_plot(), negative_png)
       save_report_plot(common_issue_plot(), issues_png)
       save_report_plot(sentiment_pie_plot(), pie_png)
-
+      
       ## A button is built, so it doesnt hog all the resources the moment the tab is visible
       ## Designed to process/run on demand only
       lda_plot_for_report <- if (lda_is_available()) {
@@ -1319,20 +1480,20 @@ server <- function(input, output, session) {
   }
   ## Adding this after running some stress tests
   advanced_chat_rules <- paste(
-  "Strict chart interpretation rules:",
-  "- Always state which chart is being analyzed.",
-  "- For Positive Sentiment Over Time, say it shows positive sentiment word counts, not positive review counts.",
-  "- For Negative Sentiment Over Time, say it shows negative sentiment word counts, not negative review counts.",
-  "- Do not claim causes for spikes or trend changes from charts alone.",
-  "- Use phrases like 'the chart shows' or 'the reviews suggest'; do not say 'this was caused by' unless external evidence is provided.",
-  "- For issue charts, call them dictionary-matched issue flags, not verified complaints.",
-  "- Mention that issue detection depends on the manual issue dictionary.",
-  "- For LDA, say topic labels are tentative interpretations of top terms.",
-  "- Do not say a topic is most important unless topic prevalence across documents is explicitly available.",
-  "- If the user asks a vague follow-up like 'this chart' or 'what about this one', keep the last selected chart unless the UI or user clearly identifies a new chart.",
-  sep = "\n"
-)
-
+    "Strict chart interpretation rules:",
+    "- Always state which chart is being analyzed.",
+    "- For Positive Sentiment Over Time, say it shows positive sentiment word counts, not positive review counts.",
+    "- For Negative Sentiment Over Time, say it shows negative sentiment word counts, not negative review counts.",
+    "- Do not claim causes for spikes or trend changes from charts alone.",
+    "- Use phrases like 'the chart shows' or 'the reviews suggest'; do not say 'this was caused by' unless external evidence is provided.",
+    "- For issue charts, call them dictionary-matched issue flags, not verified complaints.",
+    "- Mention that issue detection depends on the manual issue dictionary.",
+    "- For LDA, say topic labels are tentative interpretations of top terms.",
+    "- Do not say a topic is most important unless topic prevalence across documents is explicitly available.",
+    "- If the user asks a vague follow-up like 'this chart' or 'what about this one', keep the last selected chart unless the UI or user clearly identifies a new chart.",
+    sep = "\n"
+  )
+  
   ## Build the chatbot promopts
   advanced_chat <- chat_anthropic(
     model = "claude-haiku-4-5",
@@ -1523,21 +1684,21 @@ server <- function(input, output, session) {
     comma(nrow(df))
   })
   
-output$past_month_reviews <- renderText({
-  df <- filtered_reviews() |>
-    mutate(review_date = as.Date(review_date))
-
-  req(nrow(df) > 0)
-
-  actual_today <- Sys.Date()
-  current_month_start <- lubridate::floor_date(actual_today, unit = "month")
-
-  scales::comma(sum(
-    df$review_date >= current_month_start &
-      df$review_date <= actual_today,
-    na.rm = TRUE
-  ))
-})
+  output$past_month_reviews <- renderText({
+    df <- filtered_reviews() |>
+      mutate(review_date = as.Date(review_date))
+    
+    req(nrow(df) > 0)
+    
+    actual_today <- Sys.Date()
+    current_month_start <- lubridate::floor_date(actual_today, unit = "month")
+    
+    scales::comma(sum(
+      df$review_date >= current_month_start &
+        df$review_date <= actual_today,
+      na.rm = TRUE
+    ))
+  })
   
   output$filters_applied <- renderUI({
     tags$div(
@@ -1824,7 +1985,7 @@ output$past_month_reviews <- renderText({
   # Review table, to display the raw data (filtered of course)
   # -------------------------------------------------------------------
   
-    output$review_table <- renderDT({
+  output$review_table <- renderDT({
     df <- filtered_reviews()
     req(nrow(df) > 0)
     
