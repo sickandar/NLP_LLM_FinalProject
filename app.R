@@ -1481,7 +1481,11 @@ server <- function(input, output, session) {
   ## Adding this after running some stress tests
   advanced_chat_rules <- paste(
     "Strict chart interpretation rules:",
-    "- Always state which chart is being analyzed.",
+    "- Start every answer directly with a bullet point.",
+    "- Do not begin with a title, heading, label, or standalone chart name.",
+    "- Do not use Markdown headings.",
+    "- Do not use bold text.",
+    "- State which chart is being analyzed inside the first bullet.",
     "- For Positive Sentiment Over Time, say it shows positive sentiment word counts, not positive review counts.",
     "- For Negative Sentiment Over Time, say it shows negative sentiment word counts, not negative review counts.",
     "- Do not claim causes for spikes or trend changes from charts alone.",
@@ -1508,7 +1512,13 @@ server <- function(input, output, session) {
       "When the user asks what happened, what caused a spike, why a metric changed, or what is driving a result, analyze actual review text only when that evidence is relevant to the selected chart.",
       "Use only the evidence relevant to the selected chart; do not use unrelated chart summaries.",
       "Use cautious language: say the reviews suggest something, not that they prove an external cause.",
-      "Use plain bullets only. Normally use 3 to 5 bullets. Do not use Markdown headings, large headings, or bold labels.",
+      "Use plain text only.",
+      "Start directly with a bullet point.",
+      "Normally use 3 to 5 bullets.",
+      "Do not use Markdown headings.",
+      "Do not use title lines.",
+      "Do not use bold text.",
+      "Do not start with the chart name as a standalone line.",
       "Do not invent chart values, topic terms, review examples, dates, counts, or causes.",
       advanced_chat_rules,
       sep = "\n\n"
